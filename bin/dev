@@ -1,0 +1,82 @@
+#!/usr/bin/env ruby
+
+class DevTool
+  MAIN_HELP_BANNER = <<HEREDOC
+Execute various commands within the developer environment
+
+Usage:
+  dev [options] [COMMAND] [ARGS...]"
+  dev -h|--help
+
+Options:
+  --verbose                 Show more output
+  -v, --version             Print version and exit
+
+Commands:
+  build              Build or rebuild services
+  help               Get help on a command
+  kill               Kill containers
+  logs               View output from containers
+  ps                 List containers
+  pull               Pulls service images
+  restart            Restart services
+  rm                 Remove stopped containers
+  run                Run a one-off command
+  start              Start services
+  stop               Stop services
+  up                 Create and start containers
+  update             Update Dash developer environment
+  magic              Manage infrastructure services (Postgres, Network and dnsmasq)
+  shutdown           Stops Infrastructure containers and removes network          
+
+HEREDOC
+
+  PROXY_UNMODIFIED_TO_COMPOSE=%w{build kill logs ps pull restart rm start stop}
+  PROXY_MODIFIED=%w{up run}
+  OTHER_COMMANDS=%w{update magic shutdown}
+
+  def initialize(args)
+    if PROXY_UNMODIFIED_TO_COMPOSE.include?(args[0])
+      system(args.unshift("docker-compose").join(" "))
+    elsif PROXY_MODIFIED.include?(args[0])
+      send(args[0].to_sym, args)
+    elsif OTHER_COMMANDS.include?(args[0])
+      send(args.shift.to_sym, args)
+    else
+      puts MAIN_HELP_BANNER
+    end
+  end
+
+  def run(args)
+    args.insert(1, "--rm")
+    args.unshift("docker-compose")
+    system(args.join(" "))
+  end
+
+  def up(args)
+    magic(["up"])
+    args.insert(1, "-d")
+    args.unshift("docker-compose")
+    system(args.join(" "))
+  end
+
+  def update(args)
+    system('cd /usr/local/dev-env && git fetch && git reset --hard origin/master')
+  end
+
+  def magic(args)
+    system("docker network create --driver bridge mdl_devops_network")
+    if (args[0] == "up")
+      args.push("-d")
+    end
+    args.unshift("docker-compose", "-f /usr/local/dev-env/docker/infrastructure.yml", "-p infrastructure")
+    system(args.join(" "))
+  end
+
+  def shutdown(args)
+    system("docker-compose -f /usr/local/dev-env/docker/infrastructure.yml -p infrastructure stop")
+    system("docker network rm mdl_devops_network")
+  end
+end
+
+DevTool.new(ARGV) if __FILE__==$0

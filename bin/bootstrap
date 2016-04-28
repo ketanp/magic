@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+echo 'Checking out magic repo...'
+git clone https://github.com/ketanp/magic.git /usr/local/dev-env 2>/dev/null
+
+if [ ! -d /etc/resolver ]; then
+    echo "resolver directory does not exist .... creating one"
+    sudo mkdir -v /etc/resolver
+fi
+
+# Create a 'dev' file under /etc/resolver and specify a nameserver which points to Docker VM's public IP where DNS Server (DNSmasq) is listening on port 53
+sudo -- bash -c 'DOCKER_VM_IP=`ping -q -c 1 docker.local | sed -En "s/^.*\((.+)\).*$/\1/p"` && `echo "nameserver ${DOCKER_VM_IP}" > /etc/resolver/dev` && chmod 0755 /etc/resolver/dev'
+
+# Set Developer Environment Profile
+export PATH=$PATH:/usr/local/dev-env/bin
