@@ -12,4 +12,7 @@ fi
 sudo -- bash -c 'DOCKER_VM_IP=`ping -q -c 1 docker.local | sed -En "s/^.*\((.+)\).*$/\1/p"` && `echo "nameserver ${DOCKER_VM_IP}" > /etc/resolver/dev` && chmod 0755 /etc/resolver/dev'
 
 # Set Developer Environment Profile
-export PATH=$PATH:/usr/local/dev-env/bin
+if ! grep -Fxq 'export PATH=$PATH:/usr/local/dev-env/bin' ~/.bash_profile;then
+     echo 'Setting PATH in bash_profile to enable running "dev" command' 
+     echo 'export PATH=$PATH:/usr/local/dev-env/bin' >> ~/.bash_profile
+fi
