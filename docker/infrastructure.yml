@@ -18,7 +18,7 @@ services:
       - NET_ADMIN
     command: --address=/dev/192.168.64.6
     networks:
-      mdl_devops_network
+      - mdl_devops_network
     restart: always
      
 networks:
